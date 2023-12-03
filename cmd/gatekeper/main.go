@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bot/internal/app/commands"
 	"bot/internal/service/product"
 	"log"
 	"os"
@@ -27,7 +28,7 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 	producService := product.NewServise()
-
+	commander := commands.NewCommander(bot, producService)
 	for update := range updates {
 		if update.Message == nil {
 			continue
@@ -35,41 +36,11 @@ func main() {
 
 		switch update.Message.Command() {
 		case "help":
-			helpCommand(bot, update.Message)
+			commander.Help(update.Message)
 		case "list":
-			listCommand(bot, update.Message, producService)
+			commander.List(update.Message)
 		default:
-			defaultBegavior(bot, update.Message)
+			commander.Default(update.Message)
 		}
 	}
-}
-
-func helpCommand(bot *tgbotapi.BotAPI, inputmessage *tgbotapi.Message) {
-	msg := tgbotapi.NewMessage(inputmessage.Chat.ID, "/help - help\n"+
-		"/list - list products",
-	)
-
-	bot.Send(msg)
-}
-
-func listCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message, producServise *product.Service) {
-	outputMsgText := "Here all the products \n\n"
-
-	product := producServise.List()
-	for _, p := range product {
-		outputMsgText += p.Title
-		outputMsgText += "\n"
-	}
-
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, outputMsgText)
-
-	bot.Send(msg)
-}
-
-func defaultBegavior(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message) {
-	log.Printf("[%s] %s", inputMessage.From.UserName, inputMessage.Text)
-
-	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, "You wrote: "+inputMessage.Text)
-
-	bot.Send(msg)
 }
