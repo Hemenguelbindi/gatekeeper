@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bot/internal/service/product"
 	"log"
 	"os"
 
@@ -25,23 +26,42 @@ func main() {
 	}
 
 	updates := bot.GetUpdatesChan(u)
+	producService := product.NewServise()
 
 	for update := range updates {
 		if update.Message == nil {
 			continue
 		}
 
-		switch update.Message.Command(){
+		switch update.Message.Command() {
 		case "help":
 			helpCommand(bot, update.Message)
+		case "list":
+			listCommand(bot, update.Message, producService)
 		default:
-			defaultBegavior(bot, update.Message)	
+			defaultBegavior(bot, update.Message)
 		}
 	}
 }
 
 func helpCommand(bot *tgbotapi.BotAPI, inputmessage *tgbotapi.Message) {
-	msg := tgbotapi.NewMessage(inputmessage.Chat.ID, "/help - help")
+	msg := tgbotapi.NewMessage(inputmessage.Chat.ID, "/help - help\n"+
+		"/list - list products",
+	)
+
+	bot.Send(msg)
+}
+
+func listCommand(bot *tgbotapi.BotAPI, inputMessage *tgbotapi.Message, producServise *product.Service) {
+	outputMsgText := "Here all the products \n\n"
+
+	product := producServise.List()
+	for _, p := range product {
+		outputMsgText += p.Title
+		outputMsgText += "\n"
+	}
+
+	msg := tgbotapi.NewMessage(inputMessage.Chat.ID, outputMsgText)
 
 	bot.Send(msg)
 }
